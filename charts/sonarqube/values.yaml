@@ -25,7 +25,7 @@ OpenShift:
 
 image:
   repository: sonarqube
-  tag: 9.1.0-community
+  tag: 9.1.0-enterprise
   pullPolicy: IfNotPresent
   # If using a private repository, the name of the imagePullSecret to use
   # pullSecret: my-repo-secret
@@ -43,7 +43,7 @@ containerSecurityContext:
 elasticsearch:
   # DEPRECATED: Use initSysctl.enabled instead
   configureNode: true
-  bootstrapChecks: true
+  bootstrapChecks: false
 
 service:
   type: ClusterIP
@@ -62,7 +62,7 @@ nginx:
   enabled: false
 
 ingress:
-  enabled: false
+  enabled: true
   # Used to create an Ingress record.
   hosts:
     - name: sonarqube.your-org.com
@@ -203,7 +203,7 @@ initFs:
     privileged: true
 
 prometheusExporter:
-  enabled: true
+  enabled: false
   # jmx_prometheus_javaagent version to download from Maven Central
   version: "0.16.0"
   # Alternative full download URL for the jmx_prometheus_javaagent.jar (overrides prometheusExporter.version)
@@ -308,7 +308,7 @@ persistence:
   ##
   storageClass:
   accessMode: ReadWriteOnce
-  size: 5Gi
+  size: 2Gi
   uid: 1000
 
   ## Specify extra volumes. Refer to ".spec.volumes" specification : https://kubernetes.io/fr/docs/concepts/storage/volumes/
@@ -391,7 +391,7 @@ postgresql:
   persistence:
     enabled: true
     accessMode: ReadWriteOnce
-    size: 20Gi
+    size: 3Gi
     storageClass:
   securityContext:
     # For standard Kubernetes deployment, set enabled=true
@@ -449,12 +449,14 @@ serviceAccount:
 #
 # These Secrets/ConfigMaps are expected to contain Key/Value pairs, such as:
 #
-# apiVersion: v1
-# kind: ConfigMap
-# metadata:
-#   name: external-sonarqube-opts
-# data:
-#   SONARQUBE_JDBC_USERNAME: foo
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: external-sonarqube-opts
+data:
+  SONAR_SEARCH_JAVAOPTS: "-Xmx512m -Xms512m -XX:+HeapDumpOnOutOfMemoryError"
+  SONAR_CE_JAVAOPTS: "-Xmx512m -Xms128m -XX:+HeapDumpOnOutOfMemoryError"
+  SONAR_WEB_JAVAOPTS: "Xmx512m -Xms128m -XX:+HeapDumpOnOutOfMemoryError"
 #   SONARQUBE_JDBC_URL: jdbc:postgresql://db.example.com:5432/sonar
 #
 # These vars can then be injected into the environment by uncommenting the following:
@@ -465,7 +467,8 @@ serviceAccount:
 
 extraConfig:
   secrets: []
-  configmaps: []
+  configmaps:
+    - external-sonarqube-opts
 
 # account:
 #   adminPassword: admin
